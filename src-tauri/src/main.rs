@@ -40,13 +40,13 @@ fn take_screenshot(){
 
     let monitors = Monitor::all().unwrap();
 
-    let ocr_service = OCRService::new("../static/model/text-detection.rten", "../static/model/text-recognition.rten");
+    let ocr_service = OCRService::new("resources/model/text-detection.rten", "resources/model/text-recognition.rten");
     let embed_service = TextEmbeddingService::new(None);
-    let mut db_service = VectorDatabaseService::new("test/db");
+    let mut db_service = VectorDatabaseService::new("data");
 
 
     for monitor in monitors {
-        println!("ocr on monitor");
+       // println!("ocr on monitor");
         let image = monitor.capture_image().unwrap();
 
         let texts = ocr_service.get_lines_from_image(&image);
@@ -55,13 +55,20 @@ fn take_screenshot(){
 
 
         for vector in embeddings{
-            println!("Saving vector");
+            //println!("Saving vector");
             db_service.add_vector("farts", vector, None).unwrap();
         }
 
     
+    
 
     }
+
+    let query = "cargo";
+
+    let query_embedded = embed_service.embed(vec![query]).unwrap();
+
+    db_service.query("farts", query_embedded.into_iter().nth(0).unwrap(), 5);
 
 
 }

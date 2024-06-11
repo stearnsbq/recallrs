@@ -34,8 +34,7 @@
       "targets": "all",
       "identifier": "com.recallrs.dev",
       "resources":[
-        "../static/model/text-detection.rten",
-            "../static/model/text-recognition.rten"
+        "resources/*"
       ],
       "icon": [
         "icons/32x32.png",
