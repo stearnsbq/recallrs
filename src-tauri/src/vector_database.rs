@@ -55,6 +55,12 @@ pub mod vector_database{
             collection.search(&db_query_vector, count)
         }
 
+        pub fn get(&self, collection_name: &str, id: u32) -> Result<Record, Error>  {
+            let collection = self.get_collection(collection_name);
+
+            collection.get(&VectorID::from(id))
+        }
+
     }
 
 

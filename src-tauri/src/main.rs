@@ -9,6 +9,7 @@ use std::thread::spawn;
 use std::thread::sleep;
 use std::time::{Duration, Instant};
 use std::sync::atomic::{AtomicBool, Ordering};
+use oasysdb::metadata::Metadata;
 use ocr::ocr::OCRService;
 use text_embedding::text_embedding::TextEmbeddingService;
 use vector_database::vector_database::VectorDatabaseService;
@@ -54,9 +55,18 @@ fn take_screenshot(){
         let embeddings = embed_service.embed(texts.iter().map(|s| s.as_str()).collect()).unwrap();
 
 
-        for vector in embeddings{
+        for (i, vector) in embeddings.iter().enumerate(){
             //println!("Saving vector");
-            db_service.add_vector("farts", vector, None).unwrap();
+
+            let text = texts.get(i)
+            .unwrap_or(&String::from(""))
+            .to_string();
+
+            let metadata = Metadata::Text(text);
+
+        
+
+            db_service.add_vector("farts", vector.to_vec(), Some(&metadata)).unwrap();
         }
 
     
@@ -64,34 +74,45 @@ fn take_screenshot(){
 
     }
 
-    let query = "cargo";
+    let query = "ONNX";
 
     let query_embedded = embed_service.embed(vec![query]).unwrap();
 
-    db_service.query("farts", query_embedded.into_iter().nth(0).unwrap(), 5);
+    let results = db_service.query("farts", query_embedded.into_iter().nth(0).unwrap(), 5).unwrap();
+
+    for result in results{
+        let metadata = db_service.get("farts", result.id).unwrap().data;
+
+        match metadata {
+            Metadata::Text(txt) =>  println!("{}", txt),
+            Metadata::Integer(_) => todo!(),
+            Metadata::Float(_) => todo!(),
+            Metadata::Array(_) => todo!(),
+            Metadata::Object(_) => todo!(),
+        }
+
+       ;
+    }
 
 
 }
 
 fn capture_thread()  {
     let interval = Duration::from_secs(5);
-    let mut next_time = Instant::now() + interval;
 
-    take_screenshot();
 
-    // loop {
-    //     if RUN_CAPTURE.load(Ordering::Relaxed) {
-    //         break;
-    //     }
-    //     take_screenshot();
-    //     sleep(next_time - Instant::now());
-    //     next_time += interval;
-    // }
+    loop {
+        if RUN_CAPTURE.load(Ordering::Relaxed) {
+            break;
+        }
+        take_screenshot();
+        sleep(interval);
+    }
 
 }
 
 fn main() {
-    spawn(capture_thread);
+   // spawn(capture_thread);
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![greet])
         .run(tauri::generate_context!())
